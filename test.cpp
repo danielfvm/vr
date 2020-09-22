@@ -1,57 +1,50 @@
 #include <GL/freeglut.h>
 #include <GL/gl.h>
 
+#include <stdio.h>
+#include <time.h>
+#include <math.h>
+
 GLfloat xRotated, yRotated, zRotated;
 
-unsigned int fbo;
 int width, height;
+
+struct timespec start, end;
+
+#define WIDTH  50
+#define HEIGHT 50
+
+float map[WIDTH][HEIGHT];
+
+void init_map()
+{
+    int x, y;
+    for (x = 0; x < WIDTH; ++ x) {
+        for (y = 0; y < HEIGHT; ++ y) {
+            map[x][y] = (float)(rand() % 100) / 100.0;
+            printf("%f\n", map[x][y]);
+        }
+    }
+}
 
 void init(void)
 {
     glClearColor(0,0,0,0);
     glEnable(GL_CULL_FACE); 
     glEnable(GL_DEPTH_TEST);
-
-/* create a new framebuffer */
-/*
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);  
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-*/
-
-/*
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    GLfloat lmodel_ambient[] = { 1.0, 1.0, 0.0, 0.0 };
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-*/
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    init_map();
 }
 
-void DrawCube(void)
+void DrawCube(float x, float y, float z, float xr, float yr, float zr, float s)
 {
     glPushMatrix();
-    // clear the drawing buffer.
-        glTranslatef(0.0,0.0,-10.5);
-    glRotatef(xRotated,1.0,0.0,0.0);
-    // rotation about Y axis
-    glRotatef(yRotated,0.0,1.0,0.0);
-    // rotation about Z axis
-    glRotatef(zRotated,0.0,0.0,1.0);
-    glScalef(2,2,2);
+    glTranslatef(x, y, z);
+    glRotatef(xr,1.0,0.0,0.0);
+    glRotatef(yr,0.0,1.0,0.0);
+    glRotatef(zr,0.0,0.0,1.0);
+    glScalef(s, s, s);
+
   glBegin(GL_QUADS);        // Draw The Cube Using quads
     glColor3f(0.0f,1.0f,0.0f);    // Color Blue
     glVertex3f( 1.0f, 1.0f,-1.0f);    // Top Right Of The Quad (Top)
@@ -87,11 +80,46 @@ void DrawCube(void)
     glPopMatrix();
 }
 
+void color(int x, int y) {
+    float h = map[x][y] * 0.4;
+    glColor3f(0.5f - h,1.0f - h,0.4f - h);    // Color Yellow
+}
+
+void draw_map(float mx, float my, float mz, float xr, float yr, float zr) {
+    int x, y;
+
+    glPushMatrix();
+    glTranslatef(mx, my, mz);
+    glRotatef(xr,1.0,0.0,0.0);
+    glRotatef(yr,0.0,1.0,0.0);
+    glRotatef(zr,0.0,0.0,1.0);
+    glColor3f(0.5f,1.0f,0.4f);    // Color Yellow
+    glBegin(GL_TRIANGLES);
+        for (x = 0; x < WIDTH; ++ x) {
+            for (y = 0; y < HEIGHT; ++ y) {
+
+                color(x,y+1);
+                glVertex3f(x + 0.0f, map[x][y+1], y + 1.0f);
+                color(x+1,y);
+                glVertex3f(x + 1.0f, map[x+1][y], y + 0.0f);
+                color(x,y);
+                glVertex3f(x + 0.0f, map[x][y], y + 0.0f);
+
+                color(x+1,y);
+                glVertex3f(x + 1.0f, map[x+1][y], y + 0.0f);
+                color(x,y+1);
+                glVertex3f(x + 0.0f, map[x][y+1], y + 1.0f);
+                color(x+1,y+1);
+                glVertex3f(x + 1.0f, map[x+1][y+1], y + 1.0f);
+            }
+        }
+    glEnd();
+    glPopMatrix();
+}
 
 void drawscene(void) {
-    glColor3f(0.1, 0.1, 0.1);
-    glutSolidCube(100.0);
-    DrawCube();
+    draw_map(20, -10, 20, 0, 0, 0);
+    DrawCube(20, -9, 20, 90, 0, 0, 1);
 }
 
 void draw(void)
@@ -101,20 +129,19 @@ void draw(void)
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);
  
-    yRotated += 0.01;
-    xRotated += 0.02;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    uint64_t diff = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
 
     int space = 20;
 
-/*
-    glRotatef(pitchCam, 1, 0, 0);
-    glRotatef(yawCam, 0, 1, 0);
-    glRotatef(rollCam, 0, 0, 1);
-*/
+//    glRotatef(pitchCam, 1, 0, 0);
+    glRotatef(sin(diff * 0.0000005) * 35 - 45 - 180 - 45 / 2, 0, 1, 0); // yaw
+//    glRotatef(rollCam, 0, 0, 1);
 
-    glViewport(-space,height/4,width/2,height/2);  //Use the whole window for rendering
+    glViewport(-space - width/2,0,width,height);  //Use the whole window for rendering
     drawscene();
-    glViewport(width/2+space,height/4,width/2,height/2);  //Use the whole window for rendering
+    glViewport(width/2+space,0,width,height);  //Use the whole window for rendering
+    glRotatef(30, 0, 1, 0); // yaw
     drawscene();
 
     glFlush();
@@ -153,7 +180,7 @@ int main(int argc, char** argv){
     glutCreateWindow(argv[0]);
 	glutFullScreen();
     init();
-    glutDisplayFunc(DrawCube);
+    glutDisplayFunc(draw);
     glutReshapeFunc(reshape);
 glutMouseFunc(mouseClicks);
     //Set the function for the animation.
