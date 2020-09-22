@@ -1,5 +1,5 @@
 build: 
-	g++ test.cpp -lGL -lGLU -lglfw -lglut -o Test
+	g++ test.cpp -lGL -lGLU -lGLEW -lglut -lm -o Test
 
 clean: 
 	rm Test
