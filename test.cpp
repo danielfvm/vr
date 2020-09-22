@@ -9,7 +9,7 @@ int width, height;
 void init(void)
 {
     glClearColor(0,0,0,0);
-    //glEnable(GL_CULL_FACE); 
+    glEnable(GL_CULL_FACE); 
     glEnable(GL_DEPTH_TEST);
 
 /* create a new framebuffer */
@@ -51,7 +51,7 @@ void DrawCube(void)
     glRotatef(yRotated,0.0,1.0,0.0);
     // rotation about Z axis
     glRotatef(zRotated,0.0,0.0,1.0);
-    glScalef(3, 3, 3);
+    glScalef(2,2,2);
   glBegin(GL_QUADS);        // Draw The Cube Using quads
     glColor3f(0.0f,1.0f,0.0f);    // Color Blue
     glVertex3f( 1.0f, 1.0f,-1.0f);    // Top Right Of The Quad (Top)
@@ -140,15 +140,22 @@ void reshape(int w, int h)
     glViewport(0,0,w,h);  //Use the whole window for rendering
 }
 
+void mouseClicks(int x, int y, int w, int z) {
+	exit(0);
+}
+
 int main(int argc, char** argv){
     glutInit(&argc, argv);
     //we initizlilze the glut. functions
     glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
-    glutInitWindowPosition(100, 100);
+    glutInitWindowPosition(0, 0);
+    glutInitWindowSize(1440/2,720);
     glutCreateWindow(argv[0]);
+	glutFullScreen();
     init();
     glutDisplayFunc(DrawCube);
     glutReshapeFunc(reshape);
+glutMouseFunc(mouseClicks);
     //Set the function for the animation.
     glutIdleFunc(draw);
     glutMainLoop();
