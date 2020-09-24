@@ -5,6 +5,8 @@
 #include <time.h>
 #include <math.h>
 
+#include "sensor.h"
+
 GLfloat xRotated, yRotated, zRotated;
 
 int width, height;
@@ -16,13 +18,23 @@ struct timespec start, end;
 
 float map[WIDTH][HEIGHT];
 
+float nextrand() {
+    static float lastRand = 0.5;
+    float newRand = (rand() % 1000) / 1000.0;
+
+
+    newRand = lastRand*0.6+newRand*0.4;
+    lastRand = newRand;
+
+    return newRand;
+}
+
 void init_map()
 {
     int x, y;
     for (x = 0; x < WIDTH; ++ x) {
         for (y = 0; y < HEIGHT; ++ y) {
-            map[x][y] = (float)(rand() % 100) / 100.0;
-            printf("%f\n", map[x][y]);
+            map[x][y] = nextrand() * 2;
         }
     }
 }
@@ -81,7 +93,7 @@ void DrawCube(float x, float y, float z, float xr, float yr, float zr, float s)
 }
 
 void color(int x, int y) {
-    float h = map[x][y] * 0.4;
+    float h = (2 - map[x][y]) * 0.2;
     glColor3f(0.5f - h,1.0f - h,0.4f - h);    // Color Yellow
 }
 
@@ -172,6 +184,20 @@ void mouseClicks(int x, int y, int w, int z) {
 }
 
 int main(int argc, char** argv){
+
+    Sensor* sensor = openSensor("/sys/bus/iio/devices/iio\\:device2/in_accel_y_raw");
+    int data;
+
+    while(1) {
+        if (!readSensor(sensor, &data)) {
+            printf("Failed reading data!\n");
+            break;
+        }
+
+        printf("Data: %d\n", data);
+    }
+
+/*
     glutInit(&argc, argv);
     //we initizlilze the glut. functions
     glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
@@ -186,6 +212,7 @@ glutMouseFunc(mouseClicks);
     //Set the function for the animation.
     glutIdleFunc(draw);
     glutMainLoop();
+*/
     return 0;
 }
  
